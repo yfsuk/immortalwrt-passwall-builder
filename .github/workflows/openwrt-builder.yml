@@ -10,7 +10,7 @@ permissions:
 
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: openwrt-24.10
+  REPO_BRANCH: openwrt-24.10.6
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: .config
   DIY_P1_SH: diy-part1.sh
@@ -57,7 +57,10 @@ jobs:
         working-directory: /workdir
         run: |
           df -hT "$PWD"
-          git clone --depth=1 "$REPO_URL" -b "$REPO_BRANCH" openwrt
+          git clone --depth=1 --branch "$REPO_BRANCH" "$REPO_URL" openwrt
+          cd openwrt
+          echo "ImmortalWrt commit:"
+          git log -1 --oneline
           ln -sf /workdir/openwrt "$GITHUB_WORKSPACE/openwrt"
 
       - name: Load custom feeds
