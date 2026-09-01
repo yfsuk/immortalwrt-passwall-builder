@@ -7,7 +7,7 @@ sed -i '/^src-git \(helloworld\|passwall\|passwall_luci\|passwall_packages\|home
 
 temp_file="$(mktemp)"
 {
-    echo 'src-git mosdns https://github.com/sbwml/luci-app-mosdns.git'
+    echo 'src-git mosdns https://github.com/sbwml/luci-app-mosdns.git;v5'
     cat feeds.conf.default
 } > "$temp_file"
 
