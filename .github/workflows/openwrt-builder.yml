@@ -87,9 +87,9 @@ jobs:
       - name: Verify proxy packages
         run: |
           cd openwrt
-          test -f package/homeproxy/luci-app-homeproxy/Makefile
+          test -f package/homeproxy/Makefile
           echo "HomeProxy package path:"
-          readlink -f package/homeproxy/luci-app-homeproxy
+          readlink -f package/homeproxy
           echo "MosDNS packages:"
           find package/feeds/mosdns -maxdepth 3 -type f -name Makefile -print 2>/dev/null || true
 
