@@ -85,6 +85,16 @@ jobs:
       - name: Install feeds
         run: cd openwrt && ./scripts/feeds install -a
 
+      - name: Verify proxy packages
+        run: |
+          cd openwrt
+          ./scripts/feeds install -p homeproxy luci-app-homeproxy
+          test -f package/feeds/homeproxy/luci-app-homeproxy/Makefile
+          echo "HomeProxy package link:"
+          readlink -f package/feeds/homeproxy/luci-app-homeproxy
+          echo "MosDNS packages:"
+          find package/feeds/mosdns -maxdepth 3 -type f -name Makefile -print 2>/dev/null || true
+
       - name: Load custom configuration
         run: |
           [ -e files ] && mv files openwrt/files
