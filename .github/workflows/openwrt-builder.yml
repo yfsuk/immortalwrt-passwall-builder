@@ -12,7 +12,7 @@ env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: v24.10.6
   FEEDS_CONF: feeds.conf.default
-  CONFIG_FILE: config.txt
+  CONFIG_FILE: .config
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
   UPLOAD_BIN_DIR: false
@@ -85,16 +85,6 @@ jobs:
       - name: Install feeds
         run: cd openwrt && ./scripts/feeds install -a
 
-      - name: Verify proxy packages
-        run: |
-          cd openwrt
-          ./scripts/feeds install -p homeproxy luci-app-homeproxy
-          test -f package/feeds/homeproxy/luci-app-homeproxy/Makefile
-          echo "HomeProxy package link:"
-          readlink -f package/feeds/homeproxy/luci-app-homeproxy
-          echo "MosDNS packages:"
-          find package/feeds/mosdns -maxdepth 3 -type f -name Makefile -print 2>/dev/null || true
-
       - name: Load custom configuration
         run: |
           [ -e files ] && mv files openwrt/files
@@ -102,6 +92,15 @@ jobs:
           chmod +x "$DIY_P2_SH"
           cd openwrt
           "$GITHUB_WORKSPACE/$DIY_P2_SH"
+
+      - name: Verify proxy packages
+        run: |
+          cd openwrt
+          test -f package/homeproxy/luci-app-homeproxy/Makefile
+          echo "HomeProxy package path:"
+          readlink -f package/homeproxy/luci-app-homeproxy
+          echo "MosDNS packages:"
+          find package/feeds/mosdns -maxdepth 3 -type f -name Makefile -print 2>/dev/null || true
 
       - name: Download packages
         run: |
