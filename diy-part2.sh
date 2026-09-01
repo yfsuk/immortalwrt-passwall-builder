@@ -1,21 +1,10 @@
 #!/bin/sh
 set -eu
 
-# HomeProxy is a single LuCI package at repository root, not a multi-package
-# feed. Install it directly into package/ so feeds indexing is not required.
-rm -rf package/homeproxy
-git clone --depth=1 https://github.com/immortalwrt/homeproxy.git \
-    package/homeproxy/luci-app-homeproxy
-git -C package/homeproxy/luci-app-homeproxy fetch --depth=1 origin \
-    edece28a0085f36d469ec82c8d45f562f602db53
-git -C package/homeproxy/luci-app-homeproxy checkout -q \
-    edece28a0085f36d469ec82c8d45f562f602db53
-echo "HomeProxy commit: $(git -C package/homeproxy/luci-app-homeproxy rev-parse --short HEAD)"
-
-# MosDNS 5.3.4 requires Go 1.26. OpenWrt uses its own Host Go toolchain,
-# so replace the 24.10 Go package rather than relying on runner Go.
+# MosDNS 5.3.4 requires Go 1.26. Replace OpenWrt's Host Go package.
 rm -rf feeds/packages/lang/golang
-git clone --depth=1 --branch 26.x https://github.com/sbwml/packages_lang_golang.git \
+git clone --depth=1 --branch 26.x \
+    https://github.com/sbwml/packages_lang_golang.git \
     feeds/packages/lang/golang
 echo "OpenWrt Host Go source: $(git -C feeds/packages/lang/golang rev-parse --short HEAD)"
 
