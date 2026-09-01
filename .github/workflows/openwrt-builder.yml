@@ -88,6 +88,20 @@ jobs:
         run: |
           cd openwrt
           make defconfig
+          required_configs=(
+            CONFIG_PACKAGE_luci-app-homeproxy
+            CONFIG_PACKAGE_sing-box
+            CONFIG_PACKAGE_kmod-nft-socket
+            CONFIG_PACKAGE_kmod-nft-tproxy
+            CONFIG_PACKAGE_mosdns
+            CONFIG_PACKAGE_luci-app-mosdns
+          )
+          for config in "${required_configs[@]}"; do
+            grep -qx "${config}=y" .config || {
+              echo "Required package was not selected: ${config}"
+              exit 1
+            }
+          done
           make download -j"$(nproc)"
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
