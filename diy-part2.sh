@@ -1,25 +1,13 @@
 #!/bin/sh
 set -eu
 
-# Clone PassWall dependency packages from the same point in time as the LuCI tag.
-passwall_date="$(git -C feeds/passwall_luci show -s --format=%cI)"
-
-rm -rf package/passwall-packages
-git clone https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git package/passwall-packages
-
-passwall_packages_commit="$(
-    git -C package/passwall-packages rev-list -n 1 --before="$passwall_date" origin/main
-)"
-
-test -n "$passwall_packages_commit"
-git -C package/passwall-packages checkout -q "$passwall_packages_commit"
-
-echo "PassWall LuCI date: $passwall_date"
-echo "PassWall packages commit: $passwall_packages_commit"
+# This revision contains the current sing-box configuration generator fixes.
+git -C feeds/homeproxy checkout -q edece28a0085f36d469ec82c8d45f562f602db53
+echo "HomeProxy commit: $(git -C feeds/homeproxy rev-parse --short HEAD)"
 
 mkdir -p files/etc/uci-defaults
 
-cat > files/etc/uci-defaults/99-passwall-baseline <<'EOF'
+cat > files/etc/uci-defaults/99-router-baseline <<'EOF'
 #!/bin/sh
 
 uci set luci.main.mediaurlbase='/luci-static/argon'
@@ -42,4 +30,4 @@ sysctl -w net.bridge.bridge-nf-call-iptables=0
 exit 0
 EOF
 
-chmod 0755 files/etc/uci-defaults/99-passwall-baseline
+chmod 0755 files/etc/uci-defaults/99-router-baseline
