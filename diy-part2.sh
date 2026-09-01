@@ -1,9 +1,16 @@
 #!/bin/sh
 set -eu
 
-# This revision contains the current sing-box configuration generator fixes.
-git -C feeds/homeproxy checkout -q edece28a0085f36d469ec82c8d45f562f602db53
-echo "HomeProxy commit: $(git -C feeds/homeproxy rev-parse --short HEAD)"
+# HomeProxy is a single LuCI package at repository root, not a multi-package
+# feed. Install it directly into package/ so feeds indexing is not required.
+rm -rf package/homeproxy
+git clone --depth=1 https://github.com/immortalwrt/homeproxy.git \
+    package/homeproxy/luci-app-homeproxy
+git -C package/homeproxy/luci-app-homeproxy fetch --depth=1 origin \
+    edece28a0085f36d469ec82c8d45f562f602db53
+git -C package/homeproxy/luci-app-homeproxy checkout -q \
+    edece28a0085f36d469ec82c8d45f562f602db53
+echo "HomeProxy commit: $(git -C package/homeproxy/luci-app-homeproxy rev-parse --short HEAD)"
 
 mkdir -p files/etc/uci-defaults
 
