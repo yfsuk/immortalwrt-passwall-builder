@@ -12,6 +12,13 @@ git -C package/homeproxy/luci-app-homeproxy checkout -q \
     edece28a0085f36d469ec82c8d45f562f602db53
 echo "HomeProxy commit: $(git -C package/homeproxy/luci-app-homeproxy rev-parse --short HEAD)"
 
+# MosDNS 5.3.4 requires Go 1.26. OpenWrt uses its own Host Go toolchain,
+# so replace the 24.10 Go package rather than relying on runner Go.
+rm -rf feeds/packages/lang/golang
+git clone --depth=1 --branch 26.x https://github.com/sbwml/packages_lang_golang.git \
+    feeds/packages/lang/golang
+echo "OpenWrt Host Go source: $(git -C feeds/packages/lang/golang rev-parse --short HEAD)"
+
 mkdir -p files/etc/uci-defaults
 
 cat > files/etc/uci-defaults/99-router-baseline <<'EOF'
