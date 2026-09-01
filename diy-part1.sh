@@ -1,9 +1,13 @@
 #!/bin/sh
 set -eu
 
-# Keep the image focused on HomeProxy. PassWall and HomeProxy must not manage
-# the same transparent-proxy nftables hooks in the initial compatibility test.
 sed -i '/^src-git \(helloworld\|passwall\|passwall_luci\|passwall_packages\|homeproxy\|mosdns\) /d' feeds.conf.default
+
+rm -rf package/homeproxy
+git clone https://github.com/immortalwrt/homeproxy.git \
+  package/homeproxy/luci-app-homeproxy
+git -C package/homeproxy/luci-app-homeproxy checkout -q \
+  edece28a0085f36d469ec82c8d45f562f602db53
 
 temp_file="$(mktemp)"
 {
