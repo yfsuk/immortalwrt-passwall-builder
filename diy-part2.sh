@@ -1,15 +1,17 @@
 #!/bin/sh
 set -eu
 
-# MosDNS 5.3.4 requires Go 1.26. Replace OpenWrt's Host Go package.
+# Xray-core 26.10.10 requires Go 1.27. Pin Go 1.27.2 for all Go packages,
+# including MosDNS and AdGuard Home, using OpenWrt's Host Go build system.
 rm -rf feeds/packages/lang/golang
-git clone --depth=1 --branch 26.x \
+git clone --depth=1 --branch 27.x \
     https://github.com/sbwml/packages_lang_golang.git \
     feeds/packages/lang/golang
 git -C feeds/packages/lang/golang fetch --depth=1 origin \
-    dba928c4f25b3290090d5937fcc6271f01a2ec91
+    7369a9756458eb5d5de1f4ae66ff9293c66d2e0e
 git -C feeds/packages/lang/golang checkout --detach FETCH_HEAD
 echo "OpenWrt Host Go source: $(git -C feeds/packages/lang/golang rev-parse --short HEAD)"
+grep -E '^GO_VERSION_(MAJOR_MINOR|PATCH):=' feeds/packages/lang/golang/golang/Makefile
 
 # Backport AdGuard Home 0.107.79 and its matching frontend from ImmortalWrt's
 # current package recipe. Keep the 24.10 init script and /etc/adguardhome.yaml

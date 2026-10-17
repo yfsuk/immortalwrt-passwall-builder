@@ -19,12 +19,14 @@
 | --- | --- |
 | `.config` | 平台、镜像格式、软件包；根分区为 1024 MiB |
 | `diy-part1.sh` | 移除旧 HomeProxy 源，添加并固定 PassWall、MosDNS 源 |
-| `diy-part2.sh` | 固定 Go 1.26.9、回移新版 AdGuard Home、生成首次启动配置 |
+| `diy-part2.sh` | 固定 Go 1.27.2、回移新版 AdGuard Home、生成首次启动配置 |
 | `.github/workflows/openwrt-builder.yml` | 安装软件源、检查必要软件包、编译并上传固件 |
 | `.github/workflows/update-checker.yml` | 检查与构建一致的 ImmortalWrt 版本；未开启定时运行 |
 
 AdGuard Home 使用 ImmortalWrt 当前配方的源码、前端版本及 SHA256，保留 24.10 的
 启动脚本和配置路径。插件与工具链固定到具体提交；升级时需一起检查兼容性。
+当前 Xray-core 26.10.10 要求 Go >= 1.27，因此使用 Go 1.27.2 同时编译 Xray、
+MosDNS 和 AdGuard Home；不要替换回 Go 1.26.x。
 
 ## 编译和 PVE 部署
 
