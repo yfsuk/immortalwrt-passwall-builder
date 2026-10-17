@@ -28,6 +28,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check customization scripts
+        run: |
+          sh -n "$DIY_P1_SH"
+          sh -n "$DIY_P2_SH"
+
       - name: Initialize environment
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -71,10 +76,40 @@ jobs:
           "$GITHUB_WORKSPACE/$DIY_P1_SH"
 
       - name: Update feeds
-        run: cd openwrt && ./scripts/feeds update -a
+        run: |
+          cd openwrt
+          cat feeds.conf.default
+          ./scripts/feeds update -a
+          # feeds update can return success even when package indexing failed.
+          # Check the metadata before attempting an installation.
+          missing=0
+          while read -r feed package; do
+            if ! grep -qx "Package: $package" "feeds/$feed.index"; then
+              echo "::error::Feed $feed has no metadata for $package; check Update feeds output for clone or indexing errors."
+              missing=1
+            fi
+          done <<'EOF'
+          passwall_luci luci-app-passwall
+          passwall_packages xray-core
+          passwall_packages sing-box
+          mosdns mosdns
+          mosdns luci-app-mosdns
+          packages adguardhome
+          luci luci-base
+          EOF
+          if [ "$missing" -ne 0 ]; then
+            ls -l feeds/*.index || true
+            exit 1
+          fi
 
       - name: Install feeds
-        run: cd openwrt && ./scripts/feeds install -a
+        run: |
+          cd openwrt
+          # Install the selected providers before processing the standard feeds.
+          ./scripts/feeds install -a -f -p passwall_packages
+          ./scripts/feeds install -a -f -p passwall_luci
+          ./scripts/feeds install -a -f -p mosdns
+          ./scripts/feeds install -a
 
       - name: Load custom configuration
         run: |
@@ -84,26 +119,52 @@ jobs:
           cd openwrt
           "$GITHUB_WORKSPACE/$DIY_P2_SH"
 
-      - name: Verify proxy packages
+      - name: Verify service packages
         run: |
           cd openwrt
-          test -f package/homeproxy/Makefile
-          echo "HomeProxy package path:"
-          readlink -f package/homeproxy
-          echo "MosDNS packages:"
-          find package/feeds/mosdns -maxdepth 3 -type f -name Makefile -print 2>/dev/null || true
+          missing=0
+          for package_path in \
+            package/feeds/passwall_luci/luci-app-passwall \
+            package/feeds/passwall_packages/xray-core \
+            package/feeds/passwall_packages/sing-box \
+            package/feeds/mosdns/mosdns \
+            package/feeds/mosdns/luci-app-mosdns \
+            package/feeds/packages/adguardhome; do
+            if [ ! -f "$package_path/Makefile" ]; then
+              echo "::error::Missing installed package: $package_path/Makefile"
+              missing=1
+            else
+              readlink -f "$package_path"
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo 'Installed package links:'
+            find package/feeds -maxdepth 2 -type l -printf '%p -> %l\n' || true
+            exit 1
+          fi
+          sh -n files/etc/uci-defaults/99-router-baseline
+          sh -n files/etc/hotplug.d/iface/90-bypass-router
 
       - name: Download packages
         run: |
           cd openwrt
           make defconfig
           required_configs=(
-            CONFIG_PACKAGE_luci-app-homeproxy
+            CONFIG_PACKAGE_luci-app-passwall
+            CONFIG_PACKAGE_luci-i18n-passwall-zh-cn
+            CONFIG_PACKAGE_luci-app-passwall_Nftables_Transparent_Proxy
             CONFIG_PACKAGE_sing-box
+            CONFIG_PACKAGE_xray-core
+            CONFIG_PACKAGE_dnsmasq-full
+            CONFIG_PACKAGE_firewall4
             CONFIG_PACKAGE_kmod-nft-socket
             CONFIG_PACKAGE_kmod-nft-tproxy
             CONFIG_PACKAGE_mosdns
             CONFIG_PACKAGE_luci-app-mosdns
+            CONFIG_PACKAGE_luci-i18n-mosdns-zh-cn
+            CONFIG_PACKAGE_adguardhome
+            CONFIG_GRUB_IMAGES
+            CONFIG_GRUB_EFI_IMAGES
           )
           for config in "${required_configs[@]}"; do
             grep -qx "${config}=y" .config || {
@@ -111,6 +172,10 @@ jobs:
               exit 1
             }
           done
+          if grep -Eq '^CONFIG_PACKAGE_luci-app-(homeproxy|passwall2)=y$' .config; then
+            echo 'Unexpected proxy UI selected alongside PassWall'
+            exit 1
+          fi
           make download -j"$(nproc)"
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
